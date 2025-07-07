@@ -1,6 +1,8 @@
 package com.sandyflat.Url_Shortner.security;
 
+import com.sandyflat.Url_Shortner.exception.CustomTokenException;
 import com.sandyflat.Url_Shortner.service.UserDetailsImpl;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -59,15 +61,15 @@ public class JwtUtils {
 
     public boolean validateToken(String authToken){
         try {
-            Jwts.parser().verifyWith((SecretKey) key())
-                    .build().parseSignedClaims(authToken);
+            Jwts.parser()
+                    .verifyWith((SecretKey) key())
+                    .build()
+                    .parseSignedClaims(authToken);
             return true;
-        } catch (JwtException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e){
-            throw new RuntimeException(e);
+        } catch (ExpiredJwtException e){
+            throw new CustomTokenException("Token has expired");
+        } catch (JwtException | IllegalArgumentException e){
+            throw new CustomTokenException("Invalid token");
         }
     }
 }

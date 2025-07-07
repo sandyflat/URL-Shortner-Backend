@@ -1,6 +1,8 @@
 package com.sandyflat.Url_Shortner.service;
 
 import com.sandyflat.Url_Shortner.dto.LoginRequest;
+import com.sandyflat.Url_Shortner.dto.RegisterRequest;
+import com.sandyflat.Url_Shortner.dto.RegisterResponse;
 import com.sandyflat.Url_Shortner.model.User;
 import com.sandyflat.Url_Shortner.repository.UserRepository;
 import com.sandyflat.Url_Shortner.security.JwtAuthenticationResponse;
@@ -26,9 +28,20 @@ public class UserService {
 
     private final JwtUtils jwtUtils;
 
-    public User registerUser(User user){
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public RegisterResponse registerUser(RegisterRequest registerRequest){
+        User user = new User();
+        user.setUsername(registerRequest.getUsername());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setRole("ROLE_USER");
+        user.setEmail(registerRequest.getEmail());
+        User createdUser = userRepository.save(user);
+
+        RegisterResponse response = new RegisterResponse();
+        response.setUsername(createdUser.getUsername());
+        response.setEmail(createdUser.getEmail());
+        response.setRole(createdUser.getRole());
+
+        return response;
     }
 
     public JwtAuthenticationResponse authenticateUser(LoginRequest loginRequest){

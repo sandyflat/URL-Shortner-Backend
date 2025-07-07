@@ -1,5 +1,6 @@
 package com.sandyflat.Url_Shortner.security;
 
+import com.sandyflat.Url_Shortner.exception.CustomTokenException;
 import com.sandyflat.Url_Shortner.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -45,10 +46,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
-        } catch (Exception e){
-            e.printStackTrace();
+            filterChain.doFilter(request, response);
+
+        } catch (CustomTokenException exception){
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"" + exception.getMessage() + "\"}");
+        }
+        catch (Exception exception){
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Something went wrong\"}");
         }
 
-        filterChain.doFilter(request, response);
+
     }
 }

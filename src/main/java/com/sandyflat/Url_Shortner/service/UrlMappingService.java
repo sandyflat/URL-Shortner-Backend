@@ -2,12 +2,14 @@ package com.sandyflat.Url_Shortner.service;
 
 import com.sandyflat.Url_Shortner.dto.ClickEventDto;
 import com.sandyflat.Url_Shortner.dto.UrlMappingDTO;
+import com.sandyflat.Url_Shortner.exception.ShortUrlNotFoundException;
 import com.sandyflat.Url_Shortner.model.ClickEvent;
 import com.sandyflat.Url_Shortner.model.UrlMapping;
 import com.sandyflat.Url_Shortner.model.User;
 import com.sandyflat.Url_Shortner.repository.ClickEventRepository;
 import com.sandyflat.Url_Shortner.repository.UrlMappingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -66,9 +68,11 @@ public class UrlMappingService {
     }
 
     public List<ClickEventDto> getClickEventsByDate(String shortUrl, LocalDateTime start, LocalDateTime end) {
-        UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl);
-        if(urlMapping != null){
-            return clickEventRepository.findByUrlMappingAndClickDateBetween(urlMapping, start, end).stream()
+        UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl).orElseThrow(() -> new ShortUrlNotFoundException(
+                "Short URL " + shortUrl + " not found"
+        ));
+
+        return clickEventRepository.findByUrlMappingAndClickDateBetween(urlMapping, start, end).stream()
                     .collect(Collectors.groupingBy(click -> click.getClickDate().toLocalDate(), Collectors.counting()))
                     .entrySet().stream()
                     .map(entry -> {
@@ -78,8 +82,6 @@ public class UrlMappingService {
                         return clickEventDto;
                     })
                     .collect(Collectors.toList());
-        }
-        return null;
     }
 
     public Map<LocalDate, Long> getTotalClicksByUserAndDate(User user, LocalDate start, LocalDate end) {
@@ -93,8 +95,10 @@ public class UrlMappingService {
     }
 
     public UrlMapping getOriginalUrl(String shortUrl) {
-        UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl);
-        if(urlMapping != null){
+        UrlMapping urlMapping = urlMappingRepository.findByShortUrl(shortUrl).orElseThrow(() -> new ShortUrlNotFoundException(
+                "URL " + shortUrl + " not found"
+        ));
+
             urlMapping.setClickCount(urlMapping.getClickCount() + 1);
             urlMappingRepository.save(urlMapping);
 
@@ -103,7 +107,7 @@ public class UrlMappingService {
             clickEvent.setClickDate(LocalDateTime.now());
             clickEvent.setUrlMapping(urlMapping);
             clickEventRepository.save(clickEvent);
-        }
+
         return urlMapping;
     }
 }
